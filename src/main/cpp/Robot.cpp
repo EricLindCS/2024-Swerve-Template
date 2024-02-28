@@ -15,6 +15,8 @@ AprilTagSwerve swerveDrive{};
 XboxController xboxController{0};
 XboxController xboxController2{1};
 
+Timer timer;
+
 SwerveDriveAutonomousController swerveAutoController{&swerveDrive};
 
 void Robot::RobotInit()
@@ -22,6 +24,7 @@ void Robot::RobotInit()
   m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
   m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
+  timer.Start();
 }
 
 /**
@@ -76,6 +79,7 @@ void Robot::AutonomousPeriodic()
 
 void Robot::TeleopInit()
 {
+  timer.Restart();
   swerveDrive.ResetOdometry(Pose2d(0_m, 0_m, Rotation2d(180_deg)));
   swerveDrive.ResetTagOdometry(Pose2d(0_m, 0_m, Rotation2d(180_deg)));
 }
@@ -88,11 +92,12 @@ void Robot::TeleopPeriodic()
 
   /* DEBUGGING INFO */
 
+  
   SmartDashboard::PutNumber("FL Module Heading", swerveDrive.FLModule.GetModuleHeading());
   SmartDashboard::PutNumber("FR Module Heading", swerveDrive.FRModule.GetModuleHeading());
   SmartDashboard::PutNumber("BL Module Heading", swerveDrive.BLModule.GetModuleHeading());
   SmartDashboard::PutNumber("BR Module Heading", swerveDrive.BRModule.GetModuleHeading());
-
+  /*
   SmartDashboard::PutNumber("Odometry X Position", swerveDrive.GetOdometryPose().X().value());
   SmartDashboard::PutNumber("Odometry Y Position", swerveDrive.GetOdometryPose().Y().value());
   SmartDashboard::PutNumber("Odometry Heading", swerveDrive.GetOdometryPose().Rotation().Degrees().value());
@@ -101,14 +106,16 @@ void Robot::TeleopPeriodic()
   SmartDashboard::PutNumber("Tag Odometry X", swerveDrive.GetTagOdometryPose().X().value());
   SmartDashboard::PutNumber("Tag Odometry Y", swerveDrive.GetTagOdometryPose().Y().value());
   SmartDashboard::PutNumber("Tag Odometry Heading", swerveDrive.GetTagOdometryPose().Rotation().Degrees().value());
+  */
 
   /* DRIVER INPUT AND CONTROL */
 
   // Find controller input (*-1 converts values to fwd/left/counterclockwise positive)
   double leftJoystickX, leftJoystickY, rightJoystickX;
-  leftJoystickY = xboxController.GetLeftY() * -1;
-  leftJoystickX = xboxController.GetLeftX() * -1;
-  rightJoystickX = xboxController.GetRightX() * -1;
+  
+  leftJoystickX = (SmartDashboard::GetBoolean("Left",false) ? 50 : 0) + (SmartDashboard::GetBoolean("Right",false) ? -50 : 0);
+  leftJoystickY = (SmartDashboard::GetBoolean("Up", false) ? 50 : 0) + (SmartDashboard::GetBoolean("Down",false) ? -50 : 0);
+  rightJoystickX = (SmartDashboard::GetBoolean("TurnL",false) ? 50 : 0) + (SmartDashboard::GetBoolean("TurnR",false) ? -50 : 0);
 
   // Remove ghost movement by making sure joystick is moved a certain amount
   double leftJoystickDistance = sqrt(pow(leftJoystickX, 2.0) + pow(leftJoystickY, 2.0));
@@ -133,27 +140,11 @@ void Robot::TeleopPeriodic()
   SmartDashboard::PutNumber("Strafe Drive", strafeDriveSpeed);
   SmartDashboard::PutNumber("Turn Drive", turnSpeed);
 
+  SmartDashboard::PutNumber("time", timer.Get().value());
 
   // Drive the robot
   swerveDrive.DriveSwervePercent(fwdDriveSpeed, strafeDriveSpeed, turnSpeed);
 
-  // Drive to 0,0 for testing
-  if (xboxController.GetAButtonPressed())
-    swerveAutoController.BeginDriveToPose();
-  if (xboxController.GetAButton())
-    swerveAutoController.DriveToPose(Pose2d(-0.5_m,0_m,Rotation2d(90_deg)), PoseEstimationType::TagBased);
-
-  // Follow spline for testing
-  if (xboxController.GetBButtonPressed())
-  {
-    swerveAutoController.ResetTrajectoryQueue();
-    swerveAutoController.LoadTrajectory("Test");
-    swerveAutoController.BeginNextTrajectory();
-  }
-  if (xboxController.GetBButton())
-  {
-    swerveAutoController.FollowTrajectory(PoseEstimationType::PureOdometry);
-  }
 }
 
 void Robot::DisabledInit() {}
