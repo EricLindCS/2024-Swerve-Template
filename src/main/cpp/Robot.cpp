@@ -131,10 +131,12 @@ void Robot::TeleopPeriodic()
     rightJoystickX = 0;
   }
 
+  double GetSpeedModifier = SmartDashboard::GetNumber("SpeedMod", 100) / 100.0;
+
   // Scale control values to max speed
-  double fwdDriveSpeed = leftJoystickY * MAX_DRIVE_SPEED;
-  double strafeDriveSpeed = leftJoystickX * MAX_DRIVE_SPEED;
-  double turnSpeed = rightJoystickX * MAX_SPIN_SPEED;
+  double fwdDriveSpeed = leftJoystickY * MAX_DRIVE_SPEED * GetSpeedModifier;
+  double strafeDriveSpeed = leftJoystickX * MAX_DRIVE_SPEED * GetSpeedModifier;
+  double turnSpeed = rightJoystickX * MAX_SPIN_SPEED * GetSpeedModifier;
 
   SmartDashboard::PutNumber("FWD Drive", fwdDriveSpeed);
   SmartDashboard::PutNumber("Strafe Drive", strafeDriveSpeed);
